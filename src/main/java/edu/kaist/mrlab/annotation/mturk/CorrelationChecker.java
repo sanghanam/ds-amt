@@ -14,6 +14,7 @@ package edu.kaist.mrlab.annotation.mturk;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -46,6 +48,8 @@ import com.amazonaws.services.mturk.model.AssignmentStatus;
 import com.amazonaws.services.mturk.model.ListAssignmentsForHITRequest;
 import com.amazonaws.services.mturk.model.ListAssignmentsForHITResult;
 
+import edu.kaist.mrlab.annotation.data.Pair;
+
 /* 
  * Before connecting to MTurk, set up your AWS account and IAM settings as described here:
  * https://blog.mturk.com/how-to-use-iam-to-control-api-access-to-your-mturk-account-76fe2c2e66e2
@@ -62,7 +66,7 @@ public class CorrelationChecker {
 
 	public static void main(final String[] argv) throws Exception {
 		final CorrelationChecker sandboxApp = new CorrelationChecker(getSandboxClient());
-		sandboxApp.getAssignmentAnswer();
+//		sandboxApp.getAssignmentAnswer();
 		sandboxApp.checkCorrelation();
 	}
 
@@ -70,7 +74,6 @@ public class CorrelationChecker {
 
 	private CorrelationChecker(final AmazonMTurk client) {
 		this.client = client;
-		this.date = new Date();
 	}
 
 	/*
@@ -85,48 +88,100 @@ public class CorrelationChecker {
 		return builder.build();
 	}
 
-	private Date date = new Date();
-	private Path resultFile = Paths.get("data/result/all_assigned_hit_result_" + date.toString() + ".txt");
+	private static Date date = new Date();
+	private static Path resultFolder = Paths.get("data/result/" + date);
+	private static Path checkFolder = Paths.get("data/result/Mon Apr 09 15:56:49 KST 2018");
+	
+	private static ArrayList<String> fileList;
+	private static ArrayList<Path> filePathList;
+
+	public static void loadCorpus() throws Exception {
+		fileList = new ArrayList<>();
+		filePathList = Files.walk(checkFolder).filter(p -> Files.isRegularFile(p))
+				.collect(Collectors.toCollection(ArrayList::new));
+		System.out.println("Number of file paths: " + filePathList.size());
+		fileList = new ArrayList<>(new HashSet<>(fileList));
+	}
+
+	private static synchronized Path extractInputPath() {
+		if (filePathList.isEmpty()) {
+			return null;
+		} else {
+			return filePathList.remove(filePathList.size() - 1);
+		}
+	}
 
 	private void checkCorrelation() throws Exception {
-
-		Map<String, Set<String>> worker1Answer = new HashMap<>();
-		Map<String, Set<String>> worker2Answer = new HashMap<>();
-
-		BufferedReader br = Files.newBufferedReader(resultFile);
-		String input = null;
-		while ((input = br.readLine()) != null) {
-			StringTokenizer st = new StringTokenizer(input, "\t");
-			String hitID = st.nextToken();
-			String workerID = st.nextToken();
-			String assignmentID = st.nextToken();
-			String relationID = st.nextToken();
-			String answer = st.nextToken();
-
-			if (worker1Answer.containsKey(hitID)) {
-				Set<String> set = worker1Answer.get(hitID);
-				set.add(relationID + "\t" + answer);
-				worker1Answer.put(hitID, set);
-			} else {
-				Set<String> set = new HashSet<>();
-				set.add(relationID + "\t" + answer);
-				
-				worker1Answer.put(hitID, set);
+		
+		Path hitPath;
+		while ((hitPath = extractInputPath()) != null) {
+			if (hitPath.toString().contains("DS_Store")) {
+				continue;
 			}
 
+			BufferedReader br = Files.newBufferedReader(hitPath);
+
+			Map<String, Set<Pair>> whoWorksWhat = new HashMap<>(); 
+			String input = null;
+			while ((input = br.readLine()) != null) {
+				StringTokenizer st = new StringTokenizer(input, "\t");
+				st.nextToken(); // HITID
+				String workerID = st.nextToken();
+				String assignmentID = st.nextToken();
+				String relationID = st.nextToken();
+				String answer = st.nextToken();
+				
+				String key = workerID + "\t" + assignmentID;
+				
+				Pair pair = new Pair(relationID, answer);
+				
+				if(whoWorksWhat.containsKey(key)) {
+					Set<Pair> pairSet = whoWorksWhat.get(key);
+					pairSet.add(pair);
+					whoWorksWhat.put(key, pairSet);
+				} else {
+					Set<Pair> pairSet = new HashSet<>();
+					pairSet.add(pair);
+					whoWorksWhat.put(key, pairSet);
+				}
+			}
+			
+			List<List<Pair>> pairsList = new ArrayList<>();
+			for(String key : whoWorksWhat.keySet()) {
+				Set<Pair> pairSet = whoWorksWhat.get(key);
+				List<Pair> pairList = new ArrayList<>();
+				pairList.addAll(pairSet);
+				Collections.<Pair>sort(pairList);
+				pairsList.add(pairList);
+			}
+			
+			int numOfWorker = pairsList.size();
+			
+			for(int i = 0; i < numOfWorker; i++) {
+				
+			}
+			
+			
 		}
+		
 	}
 
 	private void getAssignmentAnswer() throws Exception {
 
-		BufferedWriter bw = Files.newBufferedWriter(resultFile);
+		
+		File f = new File(resultFolder.toString());
+		if(!f.exists()) {
+			f.mkdirs();
+		}
+		
 		BufferedReader br = Files.newBufferedReader(Paths.get("data/hit/innerwork_hit_urls_ids.txt"));
 		String input = null;
 		while ((input = br.readLine()) != null) {
 			StringTokenizer st = new StringTokenizer(input, "\t");
 			st.nextToken();
 			String hitId = st.nextToken();
-
+			
+			
 			System.out.println("HITID : " + hitId);
 
 			ListAssignmentsForHITRequest listHITRequest = new ListAssignmentsForHITRequest();
@@ -139,6 +194,9 @@ public class CorrelationChecker {
 			System.out.println("The number of submitted assignments is " + assignmentList.size());
 
 			if (assignmentList.size() == 2) {
+				
+				BufferedWriter bw = Files.newBufferedWriter(Paths.get(resultFolder.toString(), hitId));
+				
 				// Iterate through all the assignments received
 				for (Assignment asn : assignmentList) {
 
@@ -177,10 +235,10 @@ public class CorrelationChecker {
 					System.out.println();
 
 				}
+				bw.close();
 
 			}
+			
 		}
-
 	}
-
 }

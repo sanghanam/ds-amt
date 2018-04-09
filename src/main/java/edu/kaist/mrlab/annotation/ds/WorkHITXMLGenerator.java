@@ -42,7 +42,7 @@ public class WorkHITXMLGenerator {
 	private static String xmlTail = "<p><input type='submit' id='submitButton' disabled='true' value='Submit' /></p></form> 	<script language='Javascript'>turkSetAssignmentID();</script> \n"
 			+ "		\n" + "	</body> </html> ]]>\n" + "	</HTMLContent>\n" + "	<FrameHeight>600</FrameHeight>\n"
 			+ "</HTMLQuestion>\n" + "";
-	private static String form = "<br> " + "그렇다 / 아니다 " + "<br> ";
+	private static String form = "<br>";
 
 	private Map<String, Set<String>> dsMap = new HashMap<>();
 	private Map<String, String> defMap = new HashMap<>();
@@ -160,9 +160,9 @@ public class WorkHITXMLGenerator {
 			String radio = "";
 			for (String prd : prdSet) {
 
-				radio += "<p>&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"radio\" name=\"" + prd + count
-						+ "\" value=\"yes\" onclick=\"allCheck()\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"radio\" name=\""
-						+ prd + count + "\" value=\"no\" onclick=\"allCheck()\">&nbsp;&nbsp; <b>" + prd + "</b></p>\n";
+				radio += "<p><b>" + prd + "</b>&nbsp;&nbsp;&nbsp;&nbsp;그렇다&nbsp;&nbsp;<input type=\"radio\" name=\"" + prd + count
+						+ "\" value=\"yes\" onclick=\"allCheck()\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;아니다&nbsp;&nbsp;<input type=\"radio\" name=\""
+						+ prd + count + "\" value=\"no\" onclick=\"allCheck()\">&nbsp;&nbsp;</p>\n";
 
 			}
 			questionList.add(radio);

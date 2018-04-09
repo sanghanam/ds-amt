@@ -134,32 +134,32 @@ public class TutorialHITXMLGenerator {
 				Path filePath = Paths.get(count + "_" + (count + howManyQuestionsInHIT) + ".xml");
 				bw = Files.newBufferedWriter(Paths.get(outFolder.toString(), filePath.toString()));
 			}
+			
+			String h2 = "<h4> 파란색(항목 주제)과 붉은색(대상)으로 표시된 두 개체 사이의 관계로 적절한 답을 모두 고르세요. "
+					+ "이때, 문장에서 명확하게 표현하고 있는 관계만 정답으로 인정됩니다. 즉, 추론으로 알아낼 수 있는 사실은 허용되지 않습니다. </h4>";
+			questionList.add(h2);
 
-			String h1 = "<h2>";
+			String h1 = "<h4>";
 			Set<String> prdSet = dsMap.get(key);
 			for (String prd : prdSet) {
 				h1 += prd + ", ";
 			}
 			h1 = h1.substring(0, h1.length() - 2);
-			h1 += " 관계의 정의:</h2>";
+			h1 += " 관계의 정의:</h4>";
 			questionList.add(h1);
-
-			String h3 = "";
-			for (String prd : prdSet) {
-				String def = defMap.get(prd);
-				h3 += "<h3> " + prd + " : " + def + "</h3>\n";
-				questionList.add(h3);
-			}
-
-			String h2 = "<h3> 파란색(항목 주제)과 붉은색(대상)으로 표시된 두 개체 사이의 관계로 적절한 답을 모두 고르세요. "
-					+ "이때, 문장에서 명확하게 표현하고 있는 관계만 정답으로 인정됩니다. 즉, 추론으로 알아낼 수 있는 사실은 허용되지 않습니다. </h3>";
-			questionList.add(h2);
-
+			
 			StringTokenizer st = new StringTokenizer(key, "\t");
 			String sbj = st.nextToken();
 			String obj = st.nextToken();
 			String stc = st.nextToken();
 			String answer = st.nextToken();
+
+			String h3 = "";
+			for (String prd : prdSet) {
+				String def = defMap.get(prd);
+				h3 += "<h4> " + prd + " : " + def + "</h4>\n";
+				questionList.add(h3);
+			}
 
 			sbj = sbj.replace("&", "&amp;");
 			obj = obj.replace("&", "&amp;");
@@ -170,8 +170,18 @@ public class TutorialHITXMLGenerator {
 					+ "\" target=\"_blank\"><font color=tomato>" + obj + "</font></a>");
 			stc = stc.replace(" [[ ", "");
 			stc = stc.replace(" ]] ", "");
-			String question = "* " + stc;
+			String question = "<font size=\"4\"><b>문장 : </b> " + stc + "</font><br>";
 			questionList.add(question);
+			for (String prd : prdSet) {
+
+				String def = defMap.get(prd);
+				String defNL = def;
+				defNL = defNL.replace("항목 주제인", "항목 주제 (이)라는");
+				defNL = defNL.replace("항목 주제", "<font color=blue>" + sbj + "</font>");
+				defNL = defNL + "은(는) " + "<font color=tomato>" + obj + "</font>" + "인가요?";
+				questionList.add("<font size=\"4\"><b>질문 : </b>" + defNL + "</font><br><br>\n");
+			}
+
 			questionList.add(form);
 
 			String radio = "";
@@ -180,13 +190,13 @@ public class TutorialHITXMLGenerator {
 				String varAnswer = "'" + prd + count + "' : '" + answer + "'";
 				varAnswerList.add(varAnswer);
 
-				radio += "<p>&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"radio\" name=\"" + prd + count
-						+ "\" value=\"yes\" onclick=\"check(this)\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"radio\" name=\""
+				radio += "<p><b>" + prd + "</b>&nbsp;&nbsp;&nbsp;&nbsp;그렇다&nbsp;&nbsp;<input type=\"radio\" name=\"" + prd + count
+						+ "\" value=\"yes\" onclick=\"check(this)\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;아니다&nbsp;&nbsp;<input type=\"radio\" name=\""
 						+ prd + count + "\" value=\"no\" onclick=\"check(this)\">&nbsp;&nbsp; <b>" + prd + "</b></p>\n";
 
 			}
 			questionList.add(radio);
-			questionList.add("<br><br><br>");
+			questionList.add("<br><br><br><br>");
 
 			count++;
 
