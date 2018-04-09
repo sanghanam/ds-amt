@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 public class WorkHITXMLGenerator {
-	
+
 	private static int howManyQuestionsInHIT = 20;
 
 	private static String xmlHead = "<HTMLQuestion\n"
@@ -42,14 +42,16 @@ public class WorkHITXMLGenerator {
 	private static String xmlTail = "<p><input type='submit' id='submitButton' disabled='true' value='Submit' /></p></form> 	<script language='Javascript'>turkSetAssignmentID();</script> \n"
 			+ "		\n" + "	</body> </html> ]]>\n" + "	</HTMLContent>\n" + "	<FrameHeight>600</FrameHeight>\n"
 			+ "</HTMLQuestion>\n" + "";
-	private static String form = "<br><br> " + "그렇다 / 아니다 " + "<br> ";
+	private static String form = "<br> " + "그렇다 / 아니다 " + "<br> ";
 
 	private Map<String, Set<String>> dsMap = new HashMap<>();
 	private Map<String, String> defMap = new HashMap<>();
 
 	public void loadDS() throws Exception {
+		// BufferedReader br = Files
+		// .newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-work.txt"));
 		BufferedReader br = Files
-				.newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-work.txt"));
+				.newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-tutorial-hand.txt"));
 
 		String input = null;
 		while ((input = br.readLine()) != null) {
@@ -89,7 +91,7 @@ public class WorkHITXMLGenerator {
 	public void generateXML() throws Exception {
 
 		int count = 0;
-		Path outFolder = Paths.get("data/waiting_work/");
+		Path outFolder = Paths.get("data/waiting_innerwork_tutorial/");
 		File f = new File(outFolder.toString());
 		if (!f.exists()) {
 			f.mkdirs();
@@ -104,30 +106,32 @@ public class WorkHITXMLGenerator {
 				bw = Files.newBufferedWriter(Paths.get(outFolder.toString(), filePath.toString()));
 			}
 
-			String h1 = "<h2>";
+			String h2 = "<h4> 파란색(항목 주제)과 붉은색(대상)으로 표시된 두 개체 사이의 관계로 적절한 답을 모두 고르세요. "
+					+ "이때, 문장에서 명확하게 표현하고 있는 관계만 정답으로 인정됩니다. 즉, 추론으로 알아낼 수 있는 사실은 허용되지 않습니다. 예를 들면, 항목 주제가 서울에서 일하고 있다는 문장으로부터 항목 주제의 거주지가 서울이다라는 것에 '그렇다'를 태깅하면 안됩니다. </h4>";
+			questionList.add(h2);
+
+			String h1 = "<h4>";
 			Set<String> prdSet = dsMap.get(key);
 			for (String prd : prdSet) {
 				h1 += prd + ", ";
 			}
 			h1 = h1.substring(0, h1.length() - 2);
-			h1 += " 관계의 정의:</h2>";
+			h1 += " 관계의 정의:</h4>";
 			questionList.add(h1);
-
-			String h3 = "";
-			for (String prd : prdSet) {
-				String def = defMap.get(prd);
-				h3 += "<h3> " + prd + " : " + def + "</h3>\n";
-				questionList.add(h3);
-			}
-
-			String h2 = "<h3> 파란색(항목 주제)과 붉은색(대상)으로 표시된 두 개체 사이의 관계로 적절한 답을 모두 고르세요. "
-					+ "이때, 문장에서 명확하게 표현하고 있는 관계만 정답으로 인정됩니다. 즉, 추론으로 알아낼 수 있는 사실은 허용되지 않습니다. </h3>";
-			questionList.add(h2);
 
 			StringTokenizer st = new StringTokenizer(key, "\t");
 			String sbj = st.nextToken();
 			String obj = st.nextToken();
 			String stc = st.nextToken();
+
+			String h3 = "";
+			for (String prd : prdSet) {
+
+				String def = defMap.get(prd);
+				h3 += "<h4> " + prd + " : " + def + "</h4>\n";
+				questionList.add(h3);
+
+			}
 
 			sbj = sbj.replace("&", "&amp;");
 			obj = obj.replace("&", "&amp;");
@@ -138,8 +142,19 @@ public class WorkHITXMLGenerator {
 					+ "\" target=\"_blank\"><font color=tomato>" + obj + "</font></a>");
 			stc = stc.replace(" [[ ", "");
 			stc = stc.replace(" ]] ", "");
-			String question = "* " + stc;
+			String question = "<font size=\"4\"><b>문장 : </b> " + stc + "</font><br>";
 			questionList.add(question);
+
+			for (String prd : prdSet) {
+
+				String def = defMap.get(prd);
+				String defNL = def;
+				defNL = defNL.replace("항목 주제인", "항목 주제 (이)라는");
+				defNL = defNL.replace("항목 주제", "<font color=blue>" + sbj + "</font>");
+				defNL = defNL + "은(는) " + "<font color=tomato>" + obj + "</font>" + "인가요?";
+				questionList.add("<font size=\"4\"><b>질문 : </b>" + defNL + "</font><br><br>\n");
+			}
+
 			questionList.add(form);
 
 			String radio = "";
@@ -151,7 +166,7 @@ public class WorkHITXMLGenerator {
 
 			}
 			questionList.add(radio);
-			questionList.add("<br><br><br>");
+			questionList.add("<br><br><br><br>");
 
 			count++;
 
@@ -166,6 +181,14 @@ public class WorkHITXMLGenerator {
 				questionList.clear();
 			}
 		}
+		bw.write(xmlHead + "\n");
+		bw.write(checkScript);
+		for (String ques : questionList) {
+			bw.write(ques + "\n");
+		}
+		bw.write(xmlTail + "\n");
+		bw.close();
+		questionList.clear();
 	}
 
 	public static void main(String[] ar) throws Exception {

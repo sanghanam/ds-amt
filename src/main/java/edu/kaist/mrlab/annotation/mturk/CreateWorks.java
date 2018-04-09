@@ -167,8 +167,8 @@ public class CreateWorks {
 		String question = new String(Files.readAllBytes(Paths.get(questionXmlFile)));
 
 		CreateHITRequest request = new CreateHITRequest();
-		request.setMaxAssignments(1);
-		// 2 hours
+		request.setMaxAssignments(2);
+		// 24 hours
 		request.setLifetimeInSeconds(86400L);
 		// 50 mins
 		request.setAssignmentDurationInSeconds(3000L);

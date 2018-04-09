@@ -19,7 +19,7 @@ import com.amazonaws.services.mturk.model.QualificationRequirement;
 public class CreateHIT {
 
 //	private static final String QUESTION_XML_FILE_NAME = "data/annotation_sample.xml";
-	 private static final String QUESTION_XML_FILE_NAME = "data/waiting_work/0_5.xml";
+	 private static final String QUESTION_XML_FILE_NAME = "data/waiting_innerwork_tutorial/0_20.xml";
 
 	private static final String SANDBOX_ENDPOINT = "mturk-requester-sandbox.us-east-1.amazonaws.com";
 	private static final String PROD_ENDPOINT = "https://mturk-requester.us-east-1.amazonaws.com";
