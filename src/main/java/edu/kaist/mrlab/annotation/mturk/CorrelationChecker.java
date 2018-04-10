@@ -68,8 +68,8 @@ public class CorrelationChecker {
 
 	public static void main(final String[] argv) throws Exception {
 		final CorrelationChecker sandboxApp = new CorrelationChecker(getSandboxClient());
-		// sandboxApp.getAssignmentAnswer();
-		sandboxApp.checkCorrelation();
+		sandboxApp.getAssignmentAnswer();
+		// sandboxApp.checkCorrelation();
 	}
 
 	private final AmazonMTurk client;
@@ -133,7 +133,8 @@ public class CorrelationChecker {
 	}
 
 	private void checkCorrelation() throws Exception {
-		
+
+		BufferedWriter agreementWriter = Files.newBufferedWriter(Paths.get("data/result/agreement_content.txt"));
 		BufferedWriter contentWriter = Files.newBufferedWriter(Paths.get("data/result/conflict_content.txt"));
 		BufferedWriter workerWriter = Files.newBufferedWriter(Paths.get("data/result/worker_assignment.txt"));
 
@@ -245,9 +246,23 @@ public class CorrelationChecker {
 							goldList.add(p);
 
 							String content = contentMap.get(p2.getRelationID());
-							contentWriter.write(content + "\t" + p1Answer + "\t" + p2Answer + "\t" + p3Answer + "\n");
-//							System.out.println(content + "\t" + p1Answer + "\t" + p2Answer + "\t" + p3Answer);
+							contentWriter.write(content + "\t" + p2.getRelationID() + "\t" + p1Answer + "\t" + p2Answer
+									+ "\t" + p3Answer + "\n");
+
+							StringTokenizer st = new StringTokenizer(content, "\t");
+							String sbj = st.nextToken();
+							String obj = st.nextToken();
+							String prd = st.nextToken();
+							String stc = st.nextToken();
+							stc = stc.replace(" [[ _sbj_ ]] ", " << (sbj) " + sbj + " >> ");
+							stc = stc.replace(" [[ _obj_ ]] ", " << (obj) " + obj + " >> ");
+							stc = stc.replace(" [[ ", "");
+							stc = stc.replace(" ]] ", "");
+
+							System.out.println(stc + "\t" + prd + "?\t" + p1Answer + "\t" + p2Answer + "\t" + p3Answer);
 						} else {
+							String content = contentMap.get(p2.getRelationID());
+							agreementWriter.write(content + "\t" + p2.getRelationID() + "\t" + p2Answer + "\n");
 							goldList.add(p1);
 						}
 					}
@@ -292,14 +307,19 @@ public class CorrelationChecker {
 
 			}
 
-			workerWriter.write(worker1.getWorkerID() + "\t" + worker1.getAssignmentID() + "\t" + worker1.getScore() + "\n");
-			workerWriter.write(worker2.getWorkerID() + "\t" + worker2.getAssignmentID() + "\t" + worker2.getScore() + "\n");
-//			System.out.println(worker1.getWorkerID() + "\t" + worker1.getAssignmentID() + "\t" + worker1.getScore());
-//			System.out.println(worker2.getWorkerID() + "\t" + worker2.getAssignmentID() + "\t" + worker2.getScore());
-//			System.out.println();
+			workerWriter
+					.write(worker1.getWorkerID() + "\t" + worker1.getAssignmentID() + "\t" + worker1.getScore() + "\n");
+			workerWriter
+					.write(worker2.getWorkerID() + "\t" + worker2.getAssignmentID() + "\t" + worker2.getScore() + "\n");
+			// System.out.println(worker1.getWorkerID() + "\t" + worker1.getAssignmentID() +
+			// "\t" + worker1.getScore());
+			// System.out.println(worker2.getWorkerID() + "\t" + worker2.getAssignmentID() +
+			// "\t" + worker2.getScore());
+			// System.out.println();
 
 		}
-		
+
+		agreementWriter.close();
 		workerWriter.close();
 		contentWriter.close();
 

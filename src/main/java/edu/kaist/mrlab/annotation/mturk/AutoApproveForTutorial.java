@@ -105,8 +105,8 @@ public class AutoApproveForTutorial {
 			for (Assignment asn : assignmentList) {
 
 				String workerID = asn.getWorkerId();
-				String assignmentID = asn.getAssignmentId();
-				String answer = asn.getAnswer();
+//				String assignmentID = asn.getAssignmentId();
+//				String answer = asn.getAnswer();
 
 				if (workerHITMap.containsKey(workerID)) {
 					Set<String> HITSet = workerHITMap.get(workerID);
