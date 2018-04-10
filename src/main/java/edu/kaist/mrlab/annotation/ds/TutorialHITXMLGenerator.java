@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 public class TutorialHITXMLGenerator {
-	
+
 	private static int howManyQuestionsInHIT = 20;
 
 	private static String xmlHead = "<HTMLQuestion\n"
@@ -23,53 +23,30 @@ public class TutorialHITXMLGenerator {
 			+ "	<HTMLContent><![CDATA[<!DOCTYPE html> <html> <head>  <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/> <script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>\n"
 			+ "<script type=\"text/javascript\">" + "\n";
 
-	private static String checkScript = "function check(obj) {\n" + 
-			"        var name = obj.name;\n" + 
-			"        var value = obj.value;\n" + 
-			"        if (answer[name] === value){\n" + 
-			"            var btn = document.getElementsByName(name);\n" + 
-			"                 \n" + 
-			"        } else {\n" + 
-			"            alert(\"정답 아닙니다. 다시 생각해보세요.\");\n" + 
-			"             obj.checked = false;\n" + 
-			"        }\n" + 
-			"        allCheck();\n" + 
-			"    }\n" + 
-			" function allCheck() {\n" + 
-			"        var char = document.getElementById('mturk_form').childNodes;\n" + 
-			"        // console.log(char);\n" + 
-			"        var submit_btn;\n" + 
-			"        var radio_count = 0;\n" + 
-			"        var checked = 0;\n" + 
-			"        for (var h = 0; h < char.length; h++){\n" + 
-			"            // console.log(char[h].nodeName);\n" + 
-			"            if (char[h].nodeName === 'P'){\n" + 
-			"                var input = char[h].childNodes;\n" + 
-			"                for (var b = 0; b < input.length; b ++){\n" + 
-			"                    if (input[b].type === 'radio'){\n" + 
-			"                        radio_count++;\n" + 
-			"                        if (input[b].checked === true){\n" + 
-			"                            checked ++;\n" + 
-			"                        }\n" + 
-			"                    }if (input[b].type === 'submit'){\n" + 
-			"                        submit_btn = input[b];\n" + 
-			"                    }\n" + 
-			"                }\n" + 
-			"            }\n" + 
-			"        }\n" + 
-			"        if (checked === radio_count/2){\n" + 
-			"            submit_btn.disabled = '';\n" + 
-			"        } else {\n" + 
-			"            submit_btn.disabled = 'true';\n" + 
-			"        }\n" + 
-			"    }   </script>\n" + 
-			"    </head>\n" + 
-			"    <body> <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>\n" + 
-			" <input type='hidden' value='' name='assignmentId' id='assignmentId'/>\n";
+	private static String checkScript = "function check(obj) {\n" + "        var name = obj.name;\n"
+			+ "        var value = obj.value;\n" + "        if (answer[name] === value){\n"
+			+ "            var btn = document.getElementsByName(name);\n" + "                 \n" + "        } else {\n"
+			+ "            alert(\"정답 아닙니다. 다시 생각해보세요.\");\n" + "             obj.checked = false;\n" + "        }\n"
+			+ "        allCheck();\n" + "    }\n" + " function allCheck() {\n"
+			+ "        var char = document.getElementById('mturk_form').childNodes;\n"
+			+ "        // console.log(char);\n" + "        var submit_btn;\n" + "        var radio_count = 0;\n"
+			+ "        var checked = 0;\n" + "        for (var h = 0; h < char.length; h++){\n"
+			+ "            // console.log(char[h].nodeName);\n" + "            if (char[h].nodeName === 'P'){\n"
+			+ "                var input = char[h].childNodes;\n"
+			+ "                for (var b = 0; b < input.length; b ++){\n"
+			+ "                    if (input[b].type === 'radio'){\n" + "                        radio_count++;\n"
+			+ "                        if (input[b].checked === true){\n" + "                            checked ++;\n"
+			+ "                        }\n" + "                    }if (input[b].type === 'submit'){\n"
+			+ "                        submit_btn = input[b];\n" + "                    }\n" + "                }\n"
+			+ "            }\n" + "        }\n" + "        if (checked === radio_count/2){\n"
+			+ "            submit_btn.disabled = '';\n" + "        } else {\n"
+			+ "            submit_btn.disabled = 'true';\n" + "        }\n" + "    }   </script>\n" + "    </head>\n"
+			+ "    <body> <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>\n"
+			+ " <input type='hidden' value='' name='assignmentId' id='assignmentId'/>\n";
 	private static String xmlTail = "<p><input type='submit' id='submitButton' disabled='true' value='Submit' /></p></form> 	<script language='Javascript'>turkSetAssignmentID();</script> \n"
 			+ "		\n" + "	</body> </html> ]]>\n" + "	</HTMLContent>\n" + "	<FrameHeight>600</FrameHeight>\n"
 			+ "</HTMLQuestion>\n" + "";
-	private static String form = "<br><br> " + "그렇다 / 아니다 " + "<br> ";
+	private static String form = "<br> ";
 
 	private Map<String, Set<String>> dsMap = new HashMap<>();
 	private Map<String, String> defMap = new HashMap<>();
@@ -117,6 +94,8 @@ public class TutorialHITXMLGenerator {
 
 	public void generateXML() throws Exception {
 
+		BufferedWriter gold = Files.newBufferedWriter(Paths.get("data/result/gold_answer"));
+
 		int count = 0;
 		Path outFolder = Paths.get("data/waiting_tutorial/");
 		File f = new File(outFolder.toString());
@@ -134,7 +113,7 @@ public class TutorialHITXMLGenerator {
 				Path filePath = Paths.get(count + "_" + (count + howManyQuestionsInHIT) + ".xml");
 				bw = Files.newBufferedWriter(Paths.get(outFolder.toString(), filePath.toString()));
 			}
-			
+
 			String h2 = "<h4> 파란색(항목 주제)과 붉은색(대상)으로 표시된 두 개체 사이의 관계로 적절한 답을 모두 고르세요. "
 					+ "이때, 문장에서 명확하게 표현하고 있는 관계만 정답으로 인정됩니다. 즉, 추론으로 알아낼 수 있는 사실은 허용되지 않습니다. </h4>";
 			questionList.add(h2);
@@ -147,7 +126,7 @@ public class TutorialHITXMLGenerator {
 			h1 = h1.substring(0, h1.length() - 2);
 			h1 += " 관계의 정의:</h4>";
 			questionList.add(h1);
-			
+
 			StringTokenizer st = new StringTokenizer(key, "\t");
 			String sbj = st.nextToken();
 			String obj = st.nextToken();
@@ -190,9 +169,13 @@ public class TutorialHITXMLGenerator {
 				String varAnswer = "'" + prd + count + "' : '" + answer + "'";
 				varAnswerList.add(varAnswer);
 
-				radio += "<p><b>" + prd + "</b>&nbsp;&nbsp;&nbsp;&nbsp;그렇다&nbsp;&nbsp;<input type=\"radio\" name=\"" + prd + count
+				gold.write(prd + count + "\t" + answer + "\n");
+
+				radio += "<p><b>" + prd + "</b>&nbsp;&nbsp;&nbsp;&nbsp;그렇다&nbsp;&nbsp;<input type=\"radio\" name=\""
+						+ prd + "_" + count
 						+ "\" value=\"yes\" onclick=\"check(this)\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;아니다&nbsp;&nbsp;<input type=\"radio\" name=\""
-						+ prd + count + "\" value=\"no\" onclick=\"check(this)\">&nbsp;&nbsp; <b>" + prd + "</b></p>\n";
+						+ prd + "_" + count + "\" value=\"no\" onclick=\"check(this)\">&nbsp;&nbsp; <b>" + prd
+						+ "</b></p>\n";
 
 			}
 			questionList.add(radio);
@@ -220,6 +203,7 @@ public class TutorialHITXMLGenerator {
 			}
 
 		}
+		gold.close();
 
 	}
 

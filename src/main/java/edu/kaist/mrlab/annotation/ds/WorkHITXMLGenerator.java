@@ -89,6 +89,8 @@ public class WorkHITXMLGenerator {
 	}
 
 	public void generateXML() throws Exception {
+		
+		BufferedWriter ids = Files.newBufferedWriter(Paths.get("data/ds/work_ids"));
 
 		int count = 0;
 		Path outFolder = Paths.get("data/waiting_innerwork_tutorial/");
@@ -123,6 +125,7 @@ public class WorkHITXMLGenerator {
 			String sbj = st.nextToken();
 			String obj = st.nextToken();
 			String stc = st.nextToken();
+			String origStc = stc;
 
 			String h3 = "";
 			for (String prd : prdSet) {
@@ -163,6 +166,8 @@ public class WorkHITXMLGenerator {
 				radio += "<p><b>" + prd + "</b>&nbsp;&nbsp;&nbsp;&nbsp;그렇다&nbsp;&nbsp;<input type=\"radio\" name=\"" + prd + count
 						+ "\" value=\"yes\" onclick=\"allCheck()\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;아니다&nbsp;&nbsp;<input type=\"radio\" name=\""
 						+ prd + count + "\" value=\"no\" onclick=\"allCheck()\">&nbsp;&nbsp;</p>\n";
+				
+				ids.write(sbj +"\t" + obj + "\t" + prd + "\t" + origStc + "\t" + prd+count + "\n");
 
 			}
 			questionList.add(radio);
@@ -189,6 +194,7 @@ public class WorkHITXMLGenerator {
 		bw.write(xmlTail + "\n");
 		bw.close();
 		questionList.clear();
+		ids.close();
 	}
 
 	public static void main(String[] ar) throws Exception {

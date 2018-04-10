@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +50,7 @@ import com.amazonaws.services.mturk.model.ListAssignmentsForHITRequest;
 import com.amazonaws.services.mturk.model.ListAssignmentsForHITResult;
 
 import edu.kaist.mrlab.annotation.data.Pair;
+import edu.kaist.mrlab.annotation.data.Worker;
 
 /* 
  * Before connecting to MTurk, set up your AWS account and IAM settings as described here:
@@ -66,7 +68,7 @@ public class CorrelationChecker {
 
 	public static void main(final String[] argv) throws Exception {
 		final CorrelationChecker sandboxApp = new CorrelationChecker(getSandboxClient());
-//		sandboxApp.getAssignmentAnswer();
+		// sandboxApp.getAssignmentAnswer();
 		sandboxApp.checkCorrelation();
 	}
 
@@ -90,8 +92,8 @@ public class CorrelationChecker {
 
 	private static Date date = new Date();
 	private static Path resultFolder = Paths.get("data/result/" + date);
-	private static Path checkFolder = Paths.get("data/result/Mon Apr 09 15:56:49 KST 2018");
-	
+	private static Path checkFolder = Paths.get("data/result/Tue Apr 10 11:23:34 KST 2018");
+
 	private static ArrayList<String> fileList;
 	private static ArrayList<Path> filePathList;
 
@@ -111,9 +113,35 @@ public class CorrelationChecker {
 		}
 	}
 
+	private Map<String, String> answerMap = new HashMap<>();
+	private Map<String, String> contentMap = new HashMap<>();
+
+	private void loadAnswers() throws Exception {
+		BufferedReader br = Files.newBufferedReader(Paths.get("data/ds/work_ids_recover_answer"));
+		String input = null;
+		while ((input = br.readLine()) != null) {
+			StringTokenizer st = new StringTokenizer(input, "\t");
+			String sbj = st.nextToken();
+			String obj = st.nextToken();
+			String prd = st.nextToken();
+			String stc = st.nextToken();
+			String id = st.nextToken();
+			String answer = st.nextToken();
+			answerMap.put(id, answer);
+			contentMap.put(id, sbj + "\t" + obj + "\t" + prd + "\t" + stc);
+		}
+	}
+
 	private void checkCorrelation() throws Exception {
 		
+		BufferedWriter contentWriter = Files.newBufferedWriter(Paths.get("data/result/conflict_content.txt"));
+		BufferedWriter workerWriter = Files.newBufferedWriter(Paths.get("data/result/worker_assignment.txt"));
+
+		loadCorpus();
+		loadAnswers();
+
 		Path hitPath;
+
 		while ((hitPath = extractInputPath()) != null) {
 			if (hitPath.toString().contains("DS_Store")) {
 				continue;
@@ -121,7 +149,10 @@ public class CorrelationChecker {
 
 			BufferedReader br = Files.newBufferedReader(hitPath);
 
-			Map<String, Set<Pair>> whoWorksWhat = new HashMap<>(); 
+			Worker worker1 = null;
+			Worker worker2 = null;
+
+			Map<String, Set<Pair>> whoWorksWhat = new HashMap<>();
 			String input = null;
 			while ((input = br.readLine()) != null) {
 				StringTokenizer st = new StringTokenizer(input, "\t");
@@ -130,12 +161,12 @@ public class CorrelationChecker {
 				String assignmentID = st.nextToken();
 				String relationID = st.nextToken();
 				String answer = st.nextToken();
-				
+
 				String key = workerID + "\t" + assignmentID;
-				
+
 				Pair pair = new Pair(relationID, answer);
-				
-				if(whoWorksWhat.containsKey(key)) {
+
+				if (whoWorksWhat.containsKey(key)) {
 					Set<Pair> pairSet = whoWorksWhat.get(key);
 					pairSet.add(pair);
 					whoWorksWhat.put(key, pairSet);
@@ -145,43 +176,149 @@ public class CorrelationChecker {
 					whoWorksWhat.put(key, pairSet);
 				}
 			}
-			
-			List<List<Pair>> pairsList = new ArrayList<>();
-			for(String key : whoWorksWhat.keySet()) {
+
+			int count = 0;
+
+			List<List<Pair>> pairsList = new LinkedList<>();
+			for (String key : whoWorksWhat.keySet()) {
+				if (count == 0) {
+					worker1 = new Worker(key);
+				} else if (count == 1) {
+					worker2 = new Worker(key);
+				}
 				Set<Pair> pairSet = whoWorksWhat.get(key);
-				List<Pair> pairList = new ArrayList<>();
+				List<Pair> pairList = new LinkedList<>();
 				pairList.addAll(pairSet);
 				Collections.<Pair>sort(pairList);
 				pairsList.add(pairList);
+				count++;
 			}
-			
-			int numOfWorker = pairsList.size();
-			
-			for(int i = 0; i < numOfWorker; i++) {
-				
+
+			List<Pair> worker1Result = pairsList.get(0);
+			List<Pair> worker2Result = pairsList.get(1);
+			List<Pair> goldList = new ArrayList<Pair>();
+
+			for (Pair p1 : worker1Result) {
+				for (Pair p2 : worker2Result) {
+
+					if (p1.getRelationID().equals(p2.getRelationID())) {
+
+						String p1Answer = p1.getAnswer();
+						String p2Answer = p2.getAnswer();
+						String p3Answer = answerMap.get(p2.getRelationID());
+
+						if (!(p1Answer.equals(p2Answer) && p2Answer.equals(p3Answer))) {
+
+							if (p1.getRelationID().contains("isPartOfMilitaryConflict")) {
+								continue;
+							}
+
+							int yesCount = 0;
+							int noCount = 0;
+							String goldAnswer = null;
+
+							if (p1Answer.equals("yes")) {
+								yesCount++;
+							} else {
+								noCount++;
+							}
+
+							if (p2Answer.equals("yes")) {
+								yesCount++;
+							} else {
+								noCount++;
+							}
+
+							if (p3Answer.equals("yes")) {
+								yesCount++;
+							} else {
+								noCount++;
+							}
+
+							if (yesCount > noCount) {
+								goldAnswer = "yes";
+							} else {
+								goldAnswer = "no";
+							}
+
+							Pair p = new Pair(p1.getRelationID(), goldAnswer);
+							goldList.add(p);
+
+							String content = contentMap.get(p2.getRelationID());
+							contentWriter.write(content + "\t" + p1Answer + "\t" + p2Answer + "\t" + p3Answer + "\n");
+//							System.out.println(content + "\t" + p1Answer + "\t" + p2Answer + "\t" + p3Answer);
+						} else {
+							goldList.add(p1);
+						}
+					}
+				}
 			}
-			
-			
+
+			Pair rp = null;
+			for (Pair p : worker1Result) {
+				if (p.getRelationID().contains("isPartOfMilitaryConflict")) {
+					rp = p;
+				}
+			}
+
+			worker1Result.remove(rp);
+
+			for (Pair p : worker2Result) {
+				if (p.getRelationID().contains("isPartOfMilitaryConflict")) {
+					rp = p;
+				}
+			}
+
+			worker2Result.remove(rp);
+
+			for (int i = 0; i < worker1Result.size(); i++) {
+				Pair p1 = worker1Result.get(i);
+				Pair p2 = worker2Result.get(i);
+				Pair gold = goldList.get(i);
+
+				if (gold.getAnswer().equals(p1.getAnswer())) {
+					worker1.increaseHowManyQuestions(1);
+					worker1.increaseNumOfCorrect(1);
+				} else {
+					worker1.increaseHowManyQuestions(1);
+				}
+
+				if (gold.getAnswer().equals(p2.getAnswer())) {
+					worker2.increaseHowManyQuestions(1);
+					worker2.increaseNumOfCorrect(1);
+				} else {
+					worker2.increaseHowManyQuestions(1);
+				}
+
+			}
+
+			workerWriter.write(worker1.getWorkerID() + "\t" + worker1.getAssignmentID() + "\t" + worker1.getScore() + "\n");
+			workerWriter.write(worker2.getWorkerID() + "\t" + worker2.getAssignmentID() + "\t" + worker2.getScore() + "\n");
+//			System.out.println(worker1.getWorkerID() + "\t" + worker1.getAssignmentID() + "\t" + worker1.getScore());
+//			System.out.println(worker2.getWorkerID() + "\t" + worker2.getAssignmentID() + "\t" + worker2.getScore());
+//			System.out.println();
+
 		}
 		
+		workerWriter.close();
+		contentWriter.close();
+
 	}
 
 	private void getAssignmentAnswer() throws Exception {
 
-		
 		File f = new File(resultFolder.toString());
-		if(!f.exists()) {
+		if (!f.exists()) {
 			f.mkdirs();
 		}
-		
+
 		BufferedReader br = Files.newBufferedReader(Paths.get("data/hit/innerwork_hit_urls_ids.txt"));
 		String input = null;
 		while ((input = br.readLine()) != null) {
 			StringTokenizer st = new StringTokenizer(input, "\t");
 			st.nextToken();
 			String hitId = st.nextToken();
-			
-			
+
 			System.out.println("HITID : " + hitId);
 
 			ListAssignmentsForHITRequest listHITRequest = new ListAssignmentsForHITRequest();
@@ -194,9 +331,9 @@ public class CorrelationChecker {
 			System.out.println("The number of submitted assignments is " + assignmentList.size());
 
 			if (assignmentList.size() == 2) {
-				
+
 				BufferedWriter bw = Files.newBufferedWriter(Paths.get(resultFolder.toString(), hitId));
-				
+
 				// Iterate through all the assignments received
 				for (Assignment asn : assignmentList) {
 
@@ -238,7 +375,7 @@ public class CorrelationChecker {
 				bw.close();
 
 			}
-			
+
 		}
 	}
 }
