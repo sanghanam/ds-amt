@@ -169,11 +169,11 @@ public class CreateWorks {
 		CreateHITRequest request = new CreateHITRequest();
 		request.setMaxAssignments(2);
 		// 24 hours
-		request.setLifetimeInSeconds(86400L);
+		request.setLifetimeInSeconds(10000L);
 		// 50 mins
-		request.setAssignmentDurationInSeconds(3000L);
+		request.setAssignmentDurationInSeconds(1200L);
 		// Reward is a USD dollar amount - USD$0.20 in the example below
-		request.setReward("0.5");
+		request.setReward("0.15");
 		request.setTitle("KAIST DS Annotation Work");
 		request.setKeywords("Korean, relation extraction, kaist, distant supervision, gold standard, 한국어, 관계추출, 카이스트, 원격지도학습, 골드스탠다드");
 		request.setDescription("튜토리얼 완료 후 진행할 작업들입니다. 주어진 문장을 읽고, 문장 속 두 개체간 적절한 관계를 선택해주세요.");

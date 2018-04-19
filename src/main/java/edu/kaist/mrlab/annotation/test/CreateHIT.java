@@ -19,7 +19,7 @@ import com.amazonaws.services.mturk.model.QualificationRequirement;
 public class CreateHIT {
 
 //	private static final String QUESTION_XML_FILE_NAME = "data/annotation_sample.xml";
-	 private static final String QUESTION_XML_FILE_NAME = "data/waiting_innerwork_tutorial/0_20.xml";
+	 private static final String QUESTION_XML_FILE_NAME = "data/waiting_work/0_20.xml";
 
 	private static final String SANDBOX_ENDPOINT = "mturk-requester-sandbox.us-east-1.amazonaws.com";
 	private static final String PROD_ENDPOINT = "https://mturk-requester.us-east-1.amazonaws.com";
@@ -123,8 +123,8 @@ public class CreateHIT {
 		String question = new String(Files.readAllBytes(Paths.get(questionXmlFile)));
 
 		CreateHITRequest request = new CreateHITRequest();
-		request.setMaxAssignments(1);
-		request.setLifetimeInSeconds(1500L);
+		request.setMaxAssignments(100);
+		request.setLifetimeInSeconds(3000L);
 		request.setAssignmentDurationInSeconds(1000L);
 		// Reward is a USD dollar amount - USD$0.20 in the example below
 		request.setReward("0.01");

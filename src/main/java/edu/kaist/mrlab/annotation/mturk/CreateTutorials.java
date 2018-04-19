@@ -1,17 +1,15 @@
 package edu.kaist.mrlab.annotation.mturk;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.mturk.AmazonMTurk;
@@ -41,6 +39,11 @@ public class CreateTutorials {
 		 */
 
 		loadCorpus();
+
+		File f = new File(outputPath.toString());
+		if (!f.exists()) {
+			f.mkdirs();
+		}
 
 		BufferedWriter bw = Files.newBufferedWriter(Paths.get("data/hit/tutorial_hit_urls_ids.txt"));
 		Path inputPath;
@@ -129,7 +132,7 @@ public class CreateTutorials {
 
 		CreateHITRequest request = new CreateHITRequest();
 		request.setMaxAssignments(10);
-		request.setLifetimeInSeconds(86400L);
+		request.setLifetimeInSeconds(10000L);
 		request.setAssignmentDurationInSeconds(3000L);
 		// Reward is a USD dollar amount - USD$0.20 in the example below
 		request.setReward("0.00");
@@ -138,7 +141,7 @@ public class CreateTutorials {
 		// gold standard, 한국어, 관계추출, 카이스트, 원격지도학습, 골드스탠다드, 튜토리얼, tutorial");
 		// request.setDescription("본격적인 관계 추출 태깅 작업을 위한 교육 단계 (Tutorial) 입니다. 이 문제를 모두
 		// 풀어 학습을 완료한 사람만 본격적인 관계추출 태깅 작업을 시작할 수 있습니다.");
-		request.setTitle("KAIST DS Annotation Tutorial");
+		request.setTitle("KAIST DS Annotation Tutorial1");
 		request.setKeywords(
 				"Korean, Text, relation extraction, kaist, distant supervision, gold standard, 한국어, 관계추출, 카이스트, 원격지도학습, 골드스탠다드, 튜토리얼, 교육, tutorial, education, 텍스트");
 		request.setDescription("튜토리얼 문제들입니다. 이 문제를 모두 풀고 학습하면 본격적인 태깅 작업을 시작할 수 있습니다.");

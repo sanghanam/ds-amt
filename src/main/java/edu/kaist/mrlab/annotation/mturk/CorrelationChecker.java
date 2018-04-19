@@ -15,6 +15,9 @@ package edu.kaist.mrlab.annotation.mturk;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,8 +71,8 @@ public class CorrelationChecker {
 
 	public static void main(final String[] argv) throws Exception {
 		final CorrelationChecker sandboxApp = new CorrelationChecker(getSandboxClient());
-		sandboxApp.getAssignmentAnswer();
-		// sandboxApp.checkCorrelation();
+		// sandboxApp.getAssignmentAnswer();
+		sandboxApp.checkCorrelation();
 	}
 
 	private final AmazonMTurk client;
@@ -92,7 +95,7 @@ public class CorrelationChecker {
 
 	private static Date date = new Date();
 	private static Path resultFolder = Paths.get("data/result/" + date);
-	private static Path checkFolder = Paths.get("data/result/Tue Apr 10 11:23:34 KST 2018");
+	private static Path checkFolder = Paths.get("data/result/total_submitted_assignments/");
 
 	private static ArrayList<String> fileList;
 	private static ArrayList<Path> filePathList;
@@ -117,7 +120,7 @@ public class CorrelationChecker {
 	private Map<String, String> contentMap = new HashMap<>();
 
 	private void loadAnswers() throws Exception {
-		BufferedReader br = Files.newBufferedReader(Paths.get("data/ds/work_ids_recover_answer"));
+		BufferedReader br = Files.newBufferedReader(Paths.get("data/ds/innerwork_ids_recover_answer"));
 		String input = null;
 		while ((input = br.readLine()) != null) {
 			StringTokenizer st = new StringTokenizer(input, "\t");
@@ -396,6 +399,47 @@ public class CorrelationChecker {
 
 			}
 
+		}
+
+		File f2 = new File(checkFolder.toString());
+		copys(f, f2);
+
+	}
+
+	public static void copys(File selectFile, File copyFile) { // 복사할 디렉토리, 복사될 디렉토리
+		File[] ff = selectFile.listFiles(); // 복사할 디렉토리안의 폴더와 파일들을 불러옵니다.
+		for (File file : ff) {
+			File temp = new File(copyFile.getAbsolutePath() + "/" + file.getName());
+			// temp - 본격적으로 디렉토리 내에서 복사할 폴더,파일들을 순차적으로 선택해 진행합니다.
+
+			if (file.isDirectory()) { // 만약 파일이 아니고 디렉토리(폴더)라면
+				temp.mkdirs(); // 복사될 위치에 똑같이 폴더를 생성하고,
+				copys(file, temp); // 폴더의 내부를 다시 살펴봅니다.
+			} else { // 만약 파일이면 복사작업을 진행합니다.
+				FileInputStream fis = null;
+				FileOutputStream fos = null;
+
+				try {
+					fis = new FileInputStream(file);
+					fos = new FileOutputStream(temp);
+					byte[] b = new byte[4096]; // 4kbyte단위로 복사를 진행합니다.
+					int cnt = 0;
+
+					while ((cnt = fis.read(b)) != -1) { // 복사할 파일에서 데이터를 읽고,
+						fos.write(b, 0, cnt); // 복사될 위치의 파일에 데이터를 씁니다.
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				} finally {
+					try {
+						fis.close();
+						fos.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
 		}
 	}
 }

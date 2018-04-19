@@ -52,8 +52,9 @@ public class TutorialHITXMLGenerator {
 	private Map<String, String> defMap = new HashMap<>();
 
 	public void loadDS() throws Exception {
-		BufferedReader br = Files
-				.newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-tutorial-hand.txt"));
+		// BufferedReader br = Files
+		// .newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-tutorial-hand.txt"));
+		BufferedReader br = Files.newBufferedReader(Paths.get("data/gold/gold_standard_ver1.txt"));
 
 		String input = null;
 		while ((input = br.readLine()) != null) {
@@ -62,17 +63,18 @@ public class TutorialHITXMLGenerator {
 			String obj = st.nextToken();
 			String prd = st.nextToken();
 			String stc = st.nextToken();
+			String id = st.nextToken();
 			String answer = st.nextToken();
 
 			String tmp = sbj + "\t" + obj + "\t" + stc + "\t" + answer;
 
 			if (dsMap.containsKey(tmp)) {
 				Set<String> temp = dsMap.get(tmp);
-				temp.add(prd);
+				temp.add(prd + "\t" + id);
 				dsMap.put(tmp, temp);
 			} else {
 				Set<String> temp = new HashSet<>();
-				temp.add(prd);
+				temp.add(prd + "\t" + id);
 				dsMap.put(tmp, temp);
 			}
 
@@ -94,7 +96,7 @@ public class TutorialHITXMLGenerator {
 
 	public void generateXML() throws Exception {
 
-		BufferedWriter gold = Files.newBufferedWriter(Paths.get("data/result/gold_answer"));
+		BufferedWriter gold = Files.newBufferedWriter(Paths.get("data/hit/gold_answer"));
 
 		int count = 0;
 		Path outFolder = Paths.get("data/waiting_tutorial/");
@@ -120,7 +122,9 @@ public class TutorialHITXMLGenerator {
 
 			String h1 = "<h4>";
 			Set<String> prdSet = dsMap.get(key);
-			for (String prd : prdSet) {
+			for (String prdId : prdSet) {
+				StringTokenizer stp = new StringTokenizer(prdId);
+				String prd = stp.nextToken();
 				h1 += prd + ", ";
 			}
 			h1 = h1.substring(0, h1.length() - 2);
@@ -134,7 +138,9 @@ public class TutorialHITXMLGenerator {
 			String answer = st.nextToken();
 
 			String h3 = "";
-			for (String prd : prdSet) {
+			for (String prdId : prdSet) {
+				StringTokenizer stp = new StringTokenizer(prdId);
+				String prd = stp.nextToken();
 				String def = defMap.get(prd);
 				h3 += "<h4> " + prd + " : " + def + "</h4>\n";
 				questionList.add(h3);
@@ -151,8 +157,9 @@ public class TutorialHITXMLGenerator {
 			stc = stc.replace(" ]] ", "");
 			String question = "<font size=\"4\"><b>문장 : </b> " + stc + "</font><br>";
 			questionList.add(question);
-			for (String prd : prdSet) {
-
+			for (String prdId : prdSet) {
+				StringTokenizer stp = new StringTokenizer(prdId);
+				String prd = stp.nextToken();
 				String def = defMap.get(prd);
 				String defNL = def;
 				defNL = defNL.replace("항목 주제인", "항목 주제 (이)라는");
@@ -164,18 +171,21 @@ public class TutorialHITXMLGenerator {
 			questionList.add(form);
 
 			String radio = "";
-			for (String prd : prdSet) {
+			for (String prdId : prdSet) {
 
-				String varAnswer = "'" + prd + count + "' : '" + answer + "'";
+				StringTokenizer stp = new StringTokenizer(prdId);
+				String prd = stp.nextToken();
+				String id = stp.nextToken();
+
+				String varAnswer = "'" + id + "' : '" + answer + "'";
 				varAnswerList.add(varAnswer);
 
-				gold.write(prd + count + "\t" + answer + "\n");
+				gold.write(id + "\t" + answer + "\n");
 
 				radio += "<p><b>" + prd + "</b>&nbsp;&nbsp;&nbsp;&nbsp;그렇다&nbsp;&nbsp;<input type=\"radio\" name=\""
-						+ prd + "_" + count
+						+ id
 						+ "\" value=\"yes\" onclick=\"check(this)\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;아니다&nbsp;&nbsp;<input type=\"radio\" name=\""
-						+ prd + "_" + count + "\" value=\"no\" onclick=\"check(this)\">&nbsp;&nbsp; <b>" + prd
-						+ "</b></p>\n";
+						+ id + "\" value=\"no\" onclick=\"check(this)\">&nbsp;&nbsp; <b>" + "</b></p>\n";
 
 			}
 			questionList.add(radio);
@@ -203,6 +213,22 @@ public class TutorialHITXMLGenerator {
 			}
 
 		}
+		
+		bw.write(xmlHead + "\n");
+		String var = "var answer = {";
+		for (String varAns : varAnswerList) {
+			var += varAns + ", ";
+		}
+		var = var.substring(0, var.length() - 2);
+		var += "};";
+		bw.write(var + "\n");
+		bw.write(checkScript);
+		for (String ques : questionList) {
+			bw.write(ques + "\n");
+		}
+		bw.write(xmlTail + "\n");
+		bw.close();
+		
 		gold.close();
 
 	}

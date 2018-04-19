@@ -48,10 +48,10 @@ public class WorkHITXMLGenerator {
 	private Map<String, String> defMap = new HashMap<>();
 
 	public void loadDS() throws Exception {
-		// BufferedReader br = Files
-		// .newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-work.txt"));
 		BufferedReader br = Files
-				.newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-tutorial-hand.txt"));
+				.newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-work.txt"));
+		// BufferedReader br = Files
+		// .newBufferedReader(Paths.get("data/ds/kowiki-20170701-kbox_initial-wikilink-tutorial-hand.txt"));
 
 		String input = null;
 		while ((input = br.readLine()) != null) {
@@ -89,11 +89,11 @@ public class WorkHITXMLGenerator {
 	}
 
 	public void generateXML() throws Exception {
-		
+
 		BufferedWriter ids = Files.newBufferedWriter(Paths.get("data/ds/work_ids"));
 
 		int count = 0;
-		Path outFolder = Paths.get("data/waiting_innerwork_tutorial/");
+		Path outFolder = Paths.get("data/waiting_work/");
 		File f = new File(outFolder.toString());
 		if (!f.exists()) {
 			f.mkdirs();
@@ -136,6 +136,8 @@ public class WorkHITXMLGenerator {
 
 			}
 
+			stc = " " + stc + " ";
+
 			sbj = sbj.replace("&", "&amp;");
 			obj = obj.replace("&", "&amp;");
 			stc = stc.replace("&", "&amp;");
@@ -145,6 +147,7 @@ public class WorkHITXMLGenerator {
 					+ "\" target=\"_blank\"><font color=tomato>" + obj + "</font></a>");
 			stc = stc.replace(" [[ ", "");
 			stc = stc.replace(" ]] ", "");
+			stc = stc.substring(1, stc.length() - 1);
 			String question = "<font size=\"4\"><b>문장 : </b> " + stc + "</font><br>";
 			questionList.add(question);
 
@@ -163,11 +166,12 @@ public class WorkHITXMLGenerator {
 			String radio = "";
 			for (String prd : prdSet) {
 
-				radio += "<p><b>" + prd + "</b>&nbsp;&nbsp;&nbsp;&nbsp;그렇다&nbsp;&nbsp;<input type=\"radio\" name=\"" + prd + count
+				radio += "<p><b>" + prd + "</b>&nbsp;&nbsp;&nbsp;&nbsp;그렇다&nbsp;&nbsp;<input type=\"radio\" name=\""
+						+ prd + count
 						+ "\" value=\"yes\" onclick=\"allCheck()\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;아니다&nbsp;&nbsp;<input type=\"radio\" name=\""
 						+ prd + count + "\" value=\"no\" onclick=\"allCheck()\">&nbsp;&nbsp;</p>\n";
-				
-				ids.write(sbj +"\t" + obj + "\t" + prd + "\t" + origStc + "\t" + prd+count + "\n");
+
+				ids.write(sbj + "\t" + obj + "\t" + prd + "\t" + origStc + "\t" + prd + count + "\n");
 
 			}
 			questionList.add(radio);
